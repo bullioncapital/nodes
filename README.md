@@ -100,14 +100,33 @@ For `Horizon`, if you've got a super machine you can cut down ingestion time by 
 
 Use the following command to start each component in live mode.
 
-| Component | Command                                 |
-| --------- | --------------------------------------- |
-| Core      | `stellar-core run --wait-for-consensus` |
-| Horizon   | `horizon serve`                         |
+| Component | Command                                 | Description                          |
+| --------- | --------------------------------------- | ------------------------------------ |
+| Core      | `stellar-core run --wait-for-consensus` |                                      |
+| Horizon   | `horizon serve`                         | http://localhost:<HORIZON_HTTP_PORT> |
 
 **Note:** On first run both components will enter pending state because it wait for the known peers to publish its' state to history archive (HAS) which ocurr every 5 minutes (or 64 ledgers).
 Your `core` will be ready between `3-5 minutes` and your `horizon` will follow suite.
 
+**!!!CAUTION!!!** If you want to expose your horizon server to public make sure you put it behind reverse proxy with proper SSL.
+
 ## Health Probe
 
 For production, it is highly recommend that you detect your `horizon` server health. This guide doesn't do health probe because we start `stellar-core` and `horizon` in standby mode. However, probe script is provided [scripts/horizon-health-probe.sh](./scripts/horizon-health-probe.sh).
+
+## Connect to Horizon Server
+
+If you expose your horizon server through domain (`HTTPS`) then you can start connecting to your server simply replace the our official url with your own. However, if your server is deploy in private network and not serve behind `HTTPS` you'll need to adjust your client script like so:
+
+```javascript
+// npm i --save @abxit/js-kinesis-sdk
+const { Server } = require("@abx/js-kinesis-sdk");
+
+// Configure KinesisSdk to talk to the horizon instance
+const server = new Server("http://localhost:<HORIZON_HTTP_PORT>", {
+  allowHttp: true,
+  v1: false,
+});
+```
+
+ref. https://github.com/bullioncapital/js-kinesis-sdk/blob/main/docs/reference/Kinesis.md
