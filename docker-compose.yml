@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: "${NETWORK_CODE}_db"
+    image: postgres:13
+    restart: always
+    ports:
+      - 5432
+    environment:
+      POSTGRES_PASSWORD: postgres
+
+  core:
+    container_name: "${NETWORK_CODE}_core"
+    image: abxit/kinesis-core:v17.4.0-kinesis.2
+    restart: on-failure
+    depends_on:
+      - db
+    ports:
+      - 11625
+      - 11626
+    entrypoint: 
+    - bash
+    - -c
+    - |-
+      /scripts/core-init.sh
+      sleep infinity
+    volumes:
+      - $PWD/config:/config
+      - $PWD/scripts:/scripts
+    environment:
+      - NETWORK_CODE=${NETWORK_CODE}
+      - >-
+        DATABASE_URL=postgresql://dbname=${NETWORK_CODE}-core host=${NETWORK_CODE}_db user=postgres password=postgres
+
+  horizon:
+    container_name: "${NETWORK_CODE}_horizon"
+    image: abxit/kinesis-horizon:v2.8.3-kinesis.2
+    restart: on-failure
+    depends_on:
+      - db
+    ports:
+      - $HORIZON_HTTP_PORT:8000
+    environment:
+      - NETWORK_PASSPHRASE="${NETWORK_PASSPHRASE}"
+      - >-
+        DATABASE_URL=postgresql://postgres:postgres@${NETWORK_CODE}_db:5432/${NETWORK_CODE}-horizon?sslmode=disable
+      - >-
+        STELLAR_CORE_DATABASE_URL=postgresql://dbname=${NETWORK_CODE}-core host=${NETWORK_CODE}_db user=postgres password=postgres
+      - STELLAR_CORE_URL=http://${NETWORK_CODE}_core:11626  # pointing to your local stellar-core service above
+      - INGEST="true"
+      - ENABLE_CAPTIVE_CORE_INGESTION="false"
+      - INGEST_FAILED_TRANSACTIONS="true"
+      - HISTORY_ARCHIVE_URLS="${NETWORK_PASSPHRASE}"
+      - PER_HOUR_RATE_LIMIT=200000
+    entrypoint:
+    - bash
+    - -c
+    - |-
+      sleep infinity
+    volumes:
+      - $PWD/scripts:/scripts
