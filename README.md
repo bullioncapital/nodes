@@ -29,13 +29,13 @@ If you're reading this we assume you want to setup your own node. Let go through
 
 For sysadmin, here are list of known ports used by each service:
 
-| Port  | Service      | Description                                                               |
-| ----- | ------------ | ------------------------------------------------------------------------- |
-| 5432  | postgresql   | database access port                                                      |
-| 8000  | horizon      | main http port                                                            |
-| 6060  | horizon      | admin port **must be blocked from public access**                         |
-| 11625 | stellar-core | peer node port                                                            |
-| 11626 | stellar-core | main http port, block all public access and allow connection from Horizon |
+| Port  | Service      | Description                                                                  |
+| ----- | ------------ | ---------------------------------------------------------------------------- |
+| 5432  | postgresql   | database access port                                                         |
+| 8000  | horizon      | main http port                                                               |
+| 6060  | horizon      | admin port **must be blocked from public access**                            |
+| 11625 | stellar-core | peer node port                                                               |
+| 11626 | stellar-core | main http port **block all public access and allow connection from Horizon** |
 
 ## Bootstrap a Network
 
@@ -73,12 +73,12 @@ Before we move on there is another helper script which shorthand your docker com
 
 First, use the following resources to extract `LEDGER_MAX` published ledger number (`currentLedger`):
 
-| Fiat Asset | Asset Code | Environment | History Archive State (HAS)                                                         |
-| ---------- | ---------- | ----------- | ----------------------------------------------------------------------------------- |
-| GOLD       | KAU        | Mainnet     | https://kau-mainnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json |
-| SILVER     | KAG        | Mainnet     | https://kag-mainnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json |
-| GOLD       | TKAU       | Testnet     | https://kau-testnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json |
-| SILVER     | TKAG       | Testnet     | https://kag-testnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json |
+| Fiat Asset | Asset Code | Environment | History Archive State (HAS)                                                                                             |
+| ---------- | ---------- | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
+| GOLD       | KAU        | Mainnet     | [.well-known/stellar-history.json](https://kau-mainnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
+| SILVER     | KAG        | Mainnet     | [.well-known/stellar-history.json](https://kag-mainnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
+| GOLD       | TKAU       | Testnet     | [.well-known/stellar-history.json](https://kau-testnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
+| SILVER     | TKAG       | Testnet     | [.well-known/stellar-history.json](https://kag-testnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
 
 Second, use `./exec.sh` script to drop into each service `bash` shell and run appropriate command.
 
@@ -110,4 +110,4 @@ Your `core` will be ready between `3-5 minutes` and your `horizon` will follow s
 
 ## Health Probe
 
-TBD
+For production, it is highly recommend that you detect your `horizon` server health. This guide doesn't do health probe because we start `stellar-core` and `horizon` in standby mode. However, probe script is provided [scripts/horizon-health-probe.sh](./scripts/horizon-health-probe.sh).
