@@ -1,12 +1,6 @@
-# Kinesis Blockchain Nodes
+# Kinesis Blockchain Node
 
 For simplicity, we are going to use `docker-compose` to orchestrate all components. If you want to deploy node to your production please consult with your system admin.
-
-The following docker images are used:
-
-- `postgres:13` is used for sotring both stellar-core and horizon data
-- `abxit/kinesis-core:v17.4.0-kinesis.2` Stellar-core forked
-- `abxit/kinesis-horizon:v2.8.3-kinesis.2` Horizon forked
 
 There are a few things that you need to understand before we start:
 
@@ -23,7 +17,16 @@ Kinesis Blockchain Networks:
 | GOLD       | TKAU       | Testnet     | Kinesis UAT        | https://kau-testnet.kinesisgroup.io |
 | SILVER     | TKAG       | Testnet     | Kinesis KAG UAT    | https://kag-testnet.kinesisgroup.io |
 
-If you're reading this we assume you want to setup your own node. Let go through the code structure:
+If you're reading this we assume you want to setup your own node. Let's go through the code structure of `docker-compose` services and ports.
+
+## Services
+
+Each network has three services running **db, core and horizon**. Following are the docker images of these services:
+
+1. db      : `postgres:13` is used for storing both stellar-core and horizon data
+2. core    : `abxit/kinesis-core:v17.4.0-kinesis.2` Stellar-core forked
+3. horizon :`abxit/kinesis-horizon:v2.8.3-kinesis.2` Horizon forked
+
 
 ## Ports
 
@@ -37,9 +40,10 @@ For sysadmin, here are list of known ports used by each service:
 | 11625 | stellar-core | peer node port                                                               |
 | 11626 | stellar-core | main http port **block all public access and allow connection from Horizon** |
 
-## Bootstrap a Network
 
-To bootstrap an environment simply type:
+## **Bootstrap a Network **
+
+To bootstrap each of the four environments , simply type:
 
 ```bash
 # NETWORK_CODE = [kag-testnet | kag-mainnet | kau-testnet | kau-mainnet]
@@ -50,8 +54,9 @@ This script will setup postgres, stellar-core & horizon service. However, both s
 This is intentional because you will need to perform ONE TIME catchup before both services are ready to serve.
 
 ```bash
-# create stellar-core and horizon database
-# AND run migration commands against each database
+# This script 
+# 1. creates stellar-core and horizon database
+# 2. run migration commands against each database 
 # !!IMPORTANT!! this script will wipe out stellar-core db each time it runs.
 ./db-init.sh <NETWORK_CODE>
 ```
@@ -71,7 +76,8 @@ Before we move on there is another helper script which shorthand your docker com
 
 ## Catching up
 
-First, use the following resources to extract `LEDGER_MAX` published ledger number (`currentLedger`):
+Each network node needs to catchup to its respective LEDGER_MAX
+First, use the following resources to extract `LEDGER_MAX` published ledger number (`currentLedger`) for each of the networks.
 
 | Fiat Asset | Asset Code | Environment | History Archive State (HAS)                                                                                             |
 | ---------- | ---------- | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -80,9 +86,14 @@ First, use the following resources to extract `LEDGER_MAX` published ledger numb
 | GOLD       | TKAU       | Testnet     | [.well-known/stellar-history.json](https://kau-testnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
 | SILVER     | TKAG       | Testnet     | [.well-known/stellar-history.json](https://kag-testnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
 
-Second, use `./exec.sh` script to drop into each service `bash` shell and run appropriate command.
+Second, use `./exec.sh` script to drop into each service `bash` shell through $SERVICE_NAME
 
-Finally, use the following command to catchup/ingest Kinesis Blockchain ledgers.
+```bash
+# SERVICE_NAME = core | horizon | db
+./exec.sh <NETWORK_CODE> <SERVICE_NAME>
+```
+
+Run the following command to catchup/ingest Kinesis Blockchain ledgers inside the Core and Horizon services. 
 
 | Component | Command                                                                                                     |
 | --------- | ----------------------------------------------------------------------------------------------------------- |
@@ -98,14 +109,14 @@ For `Horizon`, if you've got a super machine you can cut down ingestion time by 
 
 ## Live
 
-Use the following command to start each component in live mode.
+Use the following command to start each component in live mode in the `./exec.sh` script.
 
 | Component | Command                                 | Description                          |
 | --------- | --------------------------------------- | ------------------------------------ |
 | Core      | `stellar-core run --wait-for-consensus` |                                      |
 | Horizon   | `horizon serve`                         | http://localhost:<HORIZON_HTTP_PORT> |
 
-**Note:** On first run both components will enter pending state because it wait for the known peers to publish its' state to history archive (HAS) which ocurr every 5 minutes (or 64 ledgers).
+**Note:** On first run, both the components will enter pending state because they wait for the known peers to publish its' state to history archive (HAS), which occurs every 5 minutes (or 64 ledgers).
 Your `core` will be ready between `3-5 minutes` and your `horizon` will follow suite.
 
 **!!!CAUTION!!!** If you want to expose your horizon server to public make sure you put it behind reverse proxy with proper SSL.
