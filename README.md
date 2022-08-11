@@ -25,6 +25,25 @@ Kinesis Blockchain Networks:
 
 If you're reading this we assume you want to setup your own node. Let go through the code structure:
 
+```bash
+.
+├── config              # stellar-core config files for each network
+│   ├── kag-mainnet_stellar-core.cfg
+│   ├── kag-testnet_stellar-core.cfg
+│   ├── kau-mainnet_stellar-core.cfg
+│   └── kau-testnet_stellar-core.cfg
+├── db-init.sh
+├── docker-compose.yml  # minimal setup to make stellar-core & horizon work
+├── exec.sh             # docker exec shorthand script
+├── README.md
+├── scripts             # containers init/ helper scripts
+│   ├── core-init.sh
+│   └── horizon-health-probe.sh
+├── setup.sh
+├── stop.sh
+└── teardown.sh
+```
+
 ## Ports
 
 For sysadmin, here are list of known ports used by each service:
@@ -39,30 +58,29 @@ For sysadmin, here are list of known ports used by each service:
 
 ## Bootstrap a Network
 
-To bootstrap an environment simply type:
+To bootstrap an environment first, type:
 
 ```bash
 # NETWORK_CODE = [kag-testnet | kag-mainnet | kau-testnet | kau-mainnet]
 ./setup.sh <NETWORK_CODE> <HORIZON_HTTP_PORT>
 ```
 
-This script will setup postgres, stellar-core & horizon service. However, both stellar-core and horizon service are started in standby mode.
-This is intentional because you will need to perform ONE TIME catchup before both services are ready to serve.
+This script will setup an isolated environment with three services `postgres`, `stellar-core` & `horizon`. However, both `stellar-core` and `horizon` start in standby mode. This is intentional because you will need to perform `ONE TIME catchup` before both services ready to serve.
+
+Next, you'll need to run the following script to create stellar-core and horizon databases. It also perform database migration against each database.
 
 ```bash
-# create stellar-core and horizon database
-# AND run migration commands against each database
 # !!IMPORTANT!! this script will wipe out stellar-core db each time it runs.
 ./db-init.sh <NETWORK_CODE>
 ```
 
-If you want to stop the network use this script:
+If you want to stop the environment use this script:
 
 ```bash
 ./stop.sh <NETWORK_CODE>
 ```
 
-Before we move on there is another helper script which shorthand your docker command:
+Before we move on another helper script which shorthand your `docker exec -it ...` command:
 
 ```bash
 # SERVICE_NAME = core | horizon | db
