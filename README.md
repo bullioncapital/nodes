@@ -40,18 +40,47 @@ For sysadmin, here are list of known ports used by each service:
 | 11625 | stellar-core | peer node port                                                               |
 | 11626 | stellar-core | main http port **block all public access and allow connection from Horizon** |
 
+## Bootstrap a Network
 
-## **Bootstrap a Network **
+Following steps are required to start each network :-
+1. Starting the services 
+2. Initializing db and migrating commands for each DB
+3. Node Catching up to download the latest ledger
+4. Going live 
 
+For each of the four networks, NETWORK_CODE is passed as argument in scripts to run the network
+
+| Fiat Asset | Asset Code | Environment | NETWORK_CODE  | 
+| ---------- | ---------- | ----------- | --------------| 
+| GOLD       | KAU        | Mainnet     | kau-mainnet   | 
+| SILVER     | KAG        | Mainnet     | kag-mainnet   | 
+| GOLD       | TKAU       | Testnet     | kau-testnet   | 
+| SILVER     | TKAG       | Testnet     | kag-testnet   | 
+
+
+
+## 1. Starting the services
 To bootstrap each of the four environments , simply type:
 
 ```bash
-# NETWORK_CODE = [kag-testnet | kag-mainnet | kau-testnet | kau-mainnet]
+# HORIZON_HTTP_PORT = unique http port for the network
 ./setup.sh <NETWORK_CODE> <HORIZON_HTTP_PORT>
 ```
 
 This script will setup postgres, stellar-core & horizon service. However, both stellar-core and horizon service are started in standby mode.
-This is intentional because you will need to perform ONE TIME catchup before both services are ready to serve.
+This is intentional because you will need to perform ONE TIME catchup before both services are ready to serve. 
+
+`Troubleshooting`
+
+In case if the setting up a network gives error 
+```bash
+could not find an available, non-overlapping IPv4 address pool among the defaults to assign to the network
+```
+then uncomment the network section of the `docker-compose` and provide unique subnet mask to each of the four networks.
+
+****
+## 2. Database Initialization
+After setting up the network, run following 
 
 ```bash
 # This script 
@@ -61,6 +90,8 @@ This is intentional because you will need to perform ONE TIME catchup before bot
 ./db-init.sh <NETWORK_CODE>
 ```
 
+****
+## Additional Info
 If you want to stop the network use this script:
 
 ```bash
@@ -73,8 +104,8 @@ Before we move on there is another helper script which shorthand your docker com
 # SERVICE_NAME = core | horizon | db
 ./exec.sh <NETWORK_CODE> <SERVICE_NAME>
 ```
-
-## Catching up
+****
+## 3. Catching up
 
 Each network node needs to catchup to its respective LEDGER_MAX
 First, use the following resources to extract `LEDGER_MAX` published ledger number (`currentLedger`) for each of the networks.
@@ -107,7 +138,9 @@ Usage:
 
 For `Horizon`, if you've got a super machine you can cut down ingestion time by bump up `--parallel-workers <NUMBER_CORE>`. However, if the `Horizon` crash in this stage use this command `horizon db detect-gaps` to detect ingestion gap. If gaps detected it will print out commands that you can copy/paste to backfill those missing ledger.
 
-## Live
+
+****
+## 4. Live
 
 Use the following command to start each component in live mode in the `./exec.sh` script.
 
@@ -121,6 +154,8 @@ Your `core` will be ready between `3-5 minutes` and your `horizon` will follow s
 
 **!!!CAUTION!!!** If you want to expose your horizon server to public make sure you put it behind reverse proxy with proper SSL.
 
+
+****
 ## Health Probe
 
 For production, it is highly recommend that you detect your `horizon` server health. This guide doesn't do health probe because we start `stellar-core` and `horizon` in standby mode. However, probe script is provided [scripts/horizon-health-probe.sh](./scripts/horizon-health-probe.sh).
