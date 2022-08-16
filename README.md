@@ -104,7 +104,7 @@ Finally, use the following command to catchup/ingest Kinesis Blockchain ledgers.
 
 | Component | Command                                                                                                     |
 | --------- | ----------------------------------------------------------------------------------------------------------- |
-| Core      | `stellar-core catchup 512/<LEDGER_MAX>`                                                                     |
+| Core      | `stellar-core catchup <LEDGER_MAX>/512`                                                                     |
 | Horizon   | `horizon db reingest range <LEDGER_MIN> <LEDGER_MAX> --parallel-workers 4 --log-file horizon-ingestion.log` |
 
 Usage:
