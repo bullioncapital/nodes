@@ -42,7 +42,7 @@ services:
     ports:
       - $HORIZON_HTTP_PORT:8000
     environment:
-      - NETWORK_PASSPHRASE="${NETWORK_PASSPHRASE}"
+      - NETWORK_PASSPHRASE=${NETWORK_PASSPHRASE}
       - >-
         DATABASE_URL=postgresql://postgres:postgres@${NETWORK_CODE}_db:5432/${NETWORK_CODE}-horizon?sslmode=disable
       - >-

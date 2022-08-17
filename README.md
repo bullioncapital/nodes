@@ -132,7 +132,7 @@ This will give you the db of core and horizon for NETWORK_CODE if db has been cr
 
 Each network node needs to catchup to its respective LEDGER_MAX.
 
-First, use the following resources to extract `LEDGER_MAX` published ledger number (`currentLedger`) for each of the networks.
+First, use the following HAS urls to extract `currentLedger` for the network. This value will be used as `LEDGER_MAX` in carchup commands.
 
 | Fiat Asset | Asset Code | Environment | History Archive State (HAS)                                                                                             |
 | ---------- | ---------- | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -150,20 +150,41 @@ Second, use `./exec.sh` script to drop into each service `bash` shell through $S
 
 Run the following command to catchup/ingest Kinesis Blockchain ledgers inside the Core and Horizon services. 
 
-| Service | Command                                                                                                     |
-| --------- | ----------------------------------------------------------------------------------------------------------- |
-| Core      | `stellar-core catchup 512/<LEDGER_MAX>`                                                                     |
-| Horizon   | `horizon db reingest range <LEDGER_MIN> <LEDGER_MAX> --parallel-workers 4 --log-file horizon-ingestion.log` |
+| Service | Command                                             | 
+| --------| --------------------------------------------------| 
+| Core      | `stellar-core catchup <LEDGER_MAX>/<COUNT>` ||                                          |
+| Horizon   | `horizon db reingest range <LEDGER_MIN> <LEDGER_MAX> --parallel-workers 4 --log-file horizon-ingestion.log` |           
+
 
 Usage:
+- `<COUNT>` : value should be the 'number of ledgers' to be restored from history leading uptill `LEDGER_MAX`. If you want to host full ledger use `COUNT` as `<LEDGER_MAX-2>`, otherwise `512` should be sufficient.
+- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the '.well-known/stellar-history.json' History Archive State url of the network in the table above
+- `<LEDGER_MIN> = <LEDGER_MAX - COUNT >` 
 
-- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS
-- `<LEDGER_MIN= LEDGER_MAX - DIFF>` if you want to host full ledger use `DIFF` as `2`, otherwise `512` should be sufficient 
+
 
 For `Horizon`, if you've got a super machine you can cut down ingestion time by bump up `--parallel-workers <NUMBER_CORE>`. However, if the `Horizon` crash in this stage use this command `horizon db detect-gaps` to detect ingestion gap. If gaps detected it will print out commands that you can copy/paste to backfill those missing ledger.
 
+Once the catchup is successful on **core**, the status reported in json format in logs
+````bash
+    "state" : "Joining SCP",
+    "status" : [ "Catching up to ledger 512: Succeeded: catchup-seq" ]
+  ````
+On a successful catchup on **horizon**, the generated log file `horizon-ingestion.log` will have log indicating `successfully reingested range`
+
+You can also check through db container
+````bash
+./exec.sh <NETWORK_CODE> db
+````
+Inside the db container, start psql and run query to see if the `ledgerheaders` table has `count(ledgerseq)` same as the `<COUNT>` from the core catchup step.
+````bash
+# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
+psql -U postgres -d <NETWORK_CODE>-core
+#use <NETWORK_CODE>-horizon for horizon db
+````
 
 ****
+
 ## 4. Live
 
 Use the following command to start each component in live mode in the `./exec.sh` script.
@@ -171,7 +192,7 @@ Use the following command to start each component in live mode in the `./exec.sh
 | Service | Command                                 | Description                          |
 | --------- | --------------------------------------- | ------------------------------------ |
 | Core      | `stellar-core run --wait-for-consensus` |                                      |
-| Horizon   | `horizon serve`                         | http://localhost:<HORIZON_HTTP_PORT> |
+| Horizon   | `horizon serve --ingest`                         | http://localhost:<HORIZON_HTTP_PORT> |
 
 **Note:** On first run, both the components will enter pending state because they wait for the known peers to publish its' state to history archive (HAS), which occurs every 5 minutes (or 64 ledgers).
 Your `core` will be ready between `3-5 minutes` and your `horizon` will follow suite.
