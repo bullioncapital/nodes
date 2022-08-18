@@ -48,9 +48,9 @@ services:
       - >-
         STELLAR_CORE_DATABASE_URL=postgresql://postgres:postgres@${NETWORK_CODE}_db/${NETWORK_CODE}-core?sslmode=disable
       - STELLAR_CORE_URL=http://${NETWORK_CODE}_core:11626  # pointing to your local stellar-core service above
-      - INGEST="true"
-      - ENABLE_CAPTIVE_CORE_INGESTION="false"
-      - INGEST_FAILED_TRANSACTIONS="true"
+      - INGEST=true
+      - ENABLE_CAPTIVE_CORE_INGESTION=false
+      - INGEST_FAILED_TRANSACTIONS=true
       - HISTORY_ARCHIVE_URLS=https://${NETWORK_CODE}-arch-syd-node1.kinesisgroup.io/
       - PER_HOUR_RATE_LIMIT=200000
     entrypoint:

@@ -38,7 +38,7 @@ If you're reading this we assume you want to setup your own node. Let's go throu
 └── teardown.sh
 ```
 
-## Services
+### Services
 
 Each network has three services running **db, core and horizon** in `docker-compose`. Following are the images of these services:
 
@@ -47,7 +47,7 @@ Each network has three services running **db, core and horizon** in `docker-comp
 3. horizon :`abxit/kinesis-horizon:v2.8.3-kinesis.2` Horizon forked
 
 
-## Ports
+### Ports
 
 For sysadmin, here are list of known ports used by each service:
 
@@ -59,6 +59,8 @@ For sysadmin, here are list of known ports used by each service:
 | 11625 | stellar-core | peer node port                                                               |
 | 11626 | stellar-core | main http port **block all public access and allow connection from Horizon** |
 
+****
+****
 ## Bootstrap a Network
 
 To start a network, following steps are executed through bash scripts:-
@@ -84,7 +86,7 @@ To start a network, following steps are executed through bash scripts:-
 
 
 
-## 1. Starting the services
+### 1. Starting the services
 To bootstrap each of the four environments , simply type:
 
 ```bash
@@ -102,9 +104,16 @@ In case if the setting up a network gives error
 could not find an available, non-overlapping IPv4 address pool among the defaults to assign to the network
 ```
 then uncomment the `networks` section of the `docker-compose` and provide unique subnet mask to each of the four networks.
-
+```bash
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.2.0/24
+````
 ****
-## 2. Database Initialization
+### 2. Database Initialization
 After setting up the network, run following 
 
 ```bash
@@ -121,18 +130,18 @@ To verify if database is correctly initialised, run
 ````
 Inside the container run
 ````bash
-psql -h localhost --username=postgres --command="\dt[S+]"
+psql -h localhost --username=postgres --command="\l" | grep <NETWORK_CODE>
 ````
 This will give you the db of core and horizon for NETWORK_CODE if db has been created.
 
 
 
 ****
-## 3. Catching up
+### 3. Catching up
 
 Each network node needs to catchup to its respective LEDGER_MAX.
 
-First, use the following HAS urls to extract `currentLedger` for the network. This value will be used as `LEDGER_MAX` in carchup commands.
+First, use the following HAS urls to extract `currentLedger` for the network. This value will be used as `LEDGER_MAX` in catchup commands.
 
 | Fiat Asset | Asset Code | Environment | History Archive State (HAS)                                                                                             |
 | ---------- | ---------- | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -152,15 +161,14 @@ Run the following command to catchup/ingest Kinesis Blockchain ledgers inside th
 
 | Service | Command                                             | 
 | --------| --------------------------------------------------| 
-| Core      | `stellar-core catchup <LEDGER_MAX>/<COUNT>` ||                                          |
+| Core      | `stellar-core catchup <LEDGER_MAX>/512` ||                                          |
 | Horizon   | `horizon db reingest range <LEDGER_MIN> <LEDGER_MAX> --parallel-workers 4 --log-file horizon-ingestion.log` |           
 
 
 Usage:
-- `<COUNT>` : value should be the 'number of ledgers' to be restored from history leading uptill `LEDGER_MAX`. If you want to host full ledger use `COUNT` as `<LEDGER_MAX-2>`, otherwise `512` should be sufficient.
-- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the '.well-known/stellar-history.json' History Archive State url of the network in the table above
-- `<LEDGER_MIN> = <LEDGER_MAX - COUNT >` 
 
+- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS
+- `<LEDGER_MIN>` if you want to host full ledger use `2`, otherwise `512` should be sufficient
 
 
 For `Horizon`, if you've got a super machine you can cut down ingestion time by bump up `--parallel-workers <NUMBER_CORE>`. However, if the `Horizon` crash in this stage use this command `horizon db detect-gaps` to detect ingestion gap. If gaps detected it will print out commands that you can copy/paste to backfill those missing ledger.
@@ -176,34 +184,39 @@ You can also check through db container
 ````bash
 ./exec.sh <NETWORK_CODE> db
 ````
-Inside the db container, start psql and run query to see if the `ledgerheaders` table has `count(ledgerseq)` same as the `<COUNT>` from the core catchup step.
+Inside the db container, verify the kinesis-core ingested ledgers
 ````bash
 # NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
-psql -U postgres -d <NETWORK_CODE>-core
-#use <NETWORK_CODE>-horizon for horizon db
+psql -h localhost -U postgres -d <NETWORK_CODE>-core -c "select max(ledgerseq), count(ledgerseq) from ledgerheaders"
 ````
-
 ****
 
-## 4. Live
+### 4. Live
 
 Use the following command to start each component in live mode in the `./exec.sh` script.
 
 | Service | Command                                 | Description                          |
 | --------- | --------------------------------------- | ------------------------------------ |
 | Core      | `stellar-core run --wait-for-consensus` |                                      |
-| Horizon   | `horizon serve --ingest`                         | http://localhost:<HORIZON_HTTP_PORT> |
+| Horizon   | `horizon serve`                         | http://localhost:<HORIZON_HTTP_PORT> |
 
 **Note:** On first run, both the components will enter pending state because they wait for the known peers to publish its' state to history archive (HAS), which occurs every 5 minutes (or 64 ledgers).
 Your `core` will be ready between `3-5 minutes` and your `horizon` will follow suite.
 
+When the **core** is live, the live logs will be closing ledgers with log `Closed ledger:` and `Got consensus:` every 3-5 seconds.
+
+The **horizon** is live at `http://localhost:<HORIZON_HTTP_PORT>` for the network.  Around every  64 ledgers, the `currentLedger` in the History Archive (from HAS url) will get synced with `core_latest_ledger` from live horizon.
+
 **!!!CAUTION!!!** If you want to expose your horizon server to public make sure you put it behind reverse proxy with proper SSL.
 
-
+****
 ****
 ## Health Probe
 
 For production, it is highly recommend that you detect your `horizon` server health. This guide doesn't do health probe because we start `stellar-core` and `horizon` in standby mode. However, probe script is provided [scripts/horizon-health-probe.sh](./scripts/horizon-health-probe.sh).
+
+****
+****
 
 ## Connect to Horizon Server
 
@@ -222,6 +235,7 @@ const server = new Server("http://localhost:<HORIZON_HTTP_PORT>", {
 
 ref. https://github.com/bullioncapital/js-kinesis-sdk/blob/main/docs/reference/Kinesis.md
 
+****
 ****
 ## Additional Info
 If you want to stop the network use this script:
