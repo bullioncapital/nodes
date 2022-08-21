@@ -59,8 +59,6 @@ For sysadmin, here are list of known ports used by each service:
 | 11625 | stellar-core | peer node port                                                               |
 | 11626 | stellar-core | main http port **block all public access and allow connection from Horizon** |
 
-****
-****
 ## Bootstrap a Network
 
 To start a network, following steps are executed through bash scripts:-
@@ -112,7 +110,7 @@ networks:
       config:
         - subnet: 172.16.2.0/24
 ````
-****
+
 ### 2. Database Initialization
 After setting up the network, run following 
 
@@ -135,8 +133,6 @@ psql -h localhost --username=postgres --command="\l" | grep <NETWORK_CODE>
 This will give you the db of core and horizon for NETWORK_CODE if db has been created.
 
 
-
-****
 ### 3. Catching up
 
 Each network node needs to catchup to its respective LEDGER_MAX.
@@ -189,7 +185,6 @@ Inside the db container, verify the kinesis-core ingested ledgers
 # NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
 psql -h localhost -U postgres -d <NETWORK_CODE>-core -c "select max(ledgerseq), count(ledgerseq) from ledgerheaders"
 ````
-****
 
 ### 4. Live
 
@@ -209,14 +204,9 @@ The **horizon** is live at `http://localhost:<HORIZON_HTTP_PORT>` for the networ
 
 **!!!CAUTION!!!** If you want to expose your horizon server to public make sure you put it behind reverse proxy with proper SSL.
 
-****
-****
 ## Health Probe
 
 For production, it is highly recommend that you detect your `horizon` server health. This guide doesn't do health probe because we start `stellar-core` and `horizon` in standby mode. However, probe script is provided [scripts/horizon-health-probe.sh](./scripts/horizon-health-probe.sh).
-
-****
-****
 
 ## Connect to Horizon Server
 
@@ -235,8 +225,7 @@ const server = new Server("http://localhost:<HORIZON_HTTP_PORT>", {
 
 ref. https://github.com/bullioncapital/js-kinesis-sdk/blob/main/docs/reference/Kinesis.md
 
-****
-****
+
 ## Additional Info
 If you want to stop the network use this script:
 
