@@ -95,22 +95,6 @@ To bootstrap each of the four environments , simply type:
 This script will setup postgres, stellar-core & horizon service. However, both stellar-core and horizon service are started in standby mode.
 This is intentional because you will need to perform ONE TIME catchup before both services are ready to serve. 
 
-`Troubleshooting`
-
-In case if the setting up a network gives error 
-```bash
-could not find an available, non-overlapping IPv4 address pool among the defaults to assign to the network
-```
-then uncomment the `networks` section of the `docker-compose` and provide unique subnet mask to each of the four networks.
-```bash
-networks:
-  default:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.16.2.0/24
-````
-
 ### 2. Database Initialization
 After setting up the network, run following 
 
@@ -164,8 +148,14 @@ Run the following command to catchup/ingest Kinesis Blockchain ledgers inside th
 Usage:
 
 - `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS
-- `<LEDGER_MIN>` if you want to host full ledger use `2`, otherwise `512` should be sufficient
+- `<LEDGER_MIN>` if you want to host full ledger use `2`, otherwise substract `LEDGER_MAX` by `512` should be sufficient to get your horizon up and running.
 
+```bash
+# horizon data ingestion
+LEDGER_MAX=10000
+LEDGER_MIN=$$(LEDGER_MAX - 512))
+horizon db reingest range $LEDGER_MIN $LEDGER_MAX ...
+```
 
 For `Horizon`, if you've got a super machine you can cut down ingestion time by bump up `--parallel-workers <NUMBER_CORE>`. However, if the `Horizon` crash in this stage use this command `horizon db detect-gaps` to detect ingestion gap. If gaps detected it will print out commands that you can copy/paste to backfill those missing ledger.
 
@@ -232,3 +222,21 @@ If you want to stop the network use this script:
 ```bash
 ./stop.sh <NETWORK_CODE>
 ```
+
+## Troubleshoot
+
+In case if the setting up a network gives error 
+```bash
+could not find an available, non-overlapping IPv4 address pool among the defaults to assign to the network
+```
+
+then uncomment the `networks` section of the `docker-compose.yaml` and provide unique subnet mask to each of the four networks by replacing `NNN` with number `2+`.
+
+```bash
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.NNN.0/24
+````
