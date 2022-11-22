@@ -61,13 +61,13 @@ For sysadmin, here are list of known ports used by each service:
 
 ## Bootstrap a Network
 
-To start a network, following steps are executed through bash scripts:-
+To start a network, the following steps are executed through bash scripts:-
 1. Starting the services 
-2. Initializing db and migrating commands for each DB
-3. Node Catching up to download the latest ledger
+2. Initializing databases and migrating commands for each DB
+3. Node catch-up to download the latest ledger
 4. Going live 
 
-`./exec.sh` is a common helper script which starts the container of SERVICE_NAME for NETWORK_CODE 
+`./exec.sh` is a common helper script which starts the container of teh given SERVICE_NAME for the given NETWORK_CODE passed as parameters.
 
 ```bash
 # NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
@@ -96,7 +96,7 @@ This script will setup postgres, stellar-core & horizon service. However, both s
 This is intentional because you will need to perform ONE TIME catchup before both services are ready to serve. 
 
 ### 2. Database Initialization
-After setting up the network, run following 
+After setting up the network, run following:
 
 ```bash
 # This script 
@@ -121,7 +121,7 @@ This will give you the db of core and horizon for NETWORK_CODE if db has been cr
 
 Each network node needs to catchup to its respective LEDGER_MAX.
 
-First, use the following HAS urls to extract `currentLedger` for the network. This value will be used as `LEDGER_MAX` in catchup commands.
+First, use the following HAS, (Historical Archive State), urls to extract `currentLedger` for the network. This value will be used as `LEDGER_MAX` in catchup commands.
 
 | Fiat Asset | Asset Code | Environment | History Archive State (HAS)                                                                                             |
 | ---------- | ---------- | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -147,7 +147,7 @@ Run the following command to catchup/ingest Kinesis Blockchain ledgers inside th
 
 Usage:
 
-- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS
+- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS. ie: "currentLedger": 16514687
 - `<LEDGER_MIN>` if you want to host full ledger use `2`, otherwise substract `LEDGER_MAX` by `512` should be sufficient to get your horizon up and running.
 
 ```bash
@@ -157,7 +157,7 @@ LEDGER_MIN=$$(LEDGER_MAX - 512))
 horizon db reingest range $LEDGER_MIN $LEDGER_MAX ...
 ```
 
-For `Horizon`, if you've got a super machine you can cut down ingestion time by bump up `--parallel-workers <NUMBER_CORE>`. However, if the `Horizon` crash in this stage use this command `horizon db detect-gaps` to detect ingestion gap. If gaps detected it will print out commands that you can copy/paste to backfill those missing ledger.
+For `Horizon`, if you've got a super machine you can cut down ingestion time by bump up `--parallel-workers <NUMBER_CORE>`. However, if the `Horizon` server crashes at this stage then use the command `horizon db detect-gaps`, this will detect any ingestion gaps. If gaps are detected it will print out commands that you can copy/paste in order to backfill any missing ledgers.
 
 Once the catchup is successful on **core**, the status reported in json format in logs
 ````bash
@@ -166,11 +166,11 @@ Once the catchup is successful on **core**, the status reported in json format i
   ````
 On a successful catchup on **horizon**, the generated log file `horizon-ingestion.log` will have log indicating `successfully reingested range`
 
-You can also check through db container
+You can also check through db container by executing the below script:
 ````bash
 ./exec.sh <NETWORK_CODE> db
 ````
-Inside the db container, verify the kinesis-core ingested ledgers
+Once inside the db container, verify the kinesis-core ingested the ledgers with the below script:
 ````bash
 # NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
 psql -h localhost -U postgres -d <NETWORK_CODE>-core -c "select max(ledgerseq), count(ledgerseq) from ledgerheaders"
@@ -188,19 +188,19 @@ Use the following command to start each component in live mode in the `./exec.sh
 **Note:** On first run, both the components will enter pending state because they wait for the known peers to publish its' state to history archive (HAS), which occurs every 5 minutes (or 64 ledgers).
 Your `core` will be ready between `3-5 minutes` and your `horizon` will follow suite.
 
-When the **core** is live, the live logs will be closing ledgers with log `Closed ledger:` and `Got consensus:` every 3-5 seconds.
+When the **core** is live, the live logs will contain closing ledger entries with `Closed ledger:` and `Got consensus:` every 3-5 seconds.
 
-The **horizon** is live at `http://localhost:<HORIZON_HTTP_PORT>` for the network.  Around every  64 ledgers, the `currentLedger` in the History Archive (from HAS url) will get synced with `core_latest_ledger` from live horizon.
+The **horizon** is live at `http://localhost:<HORIZON_HTTP_PORT>` for the network.  Around every 64 ledgers, the `currentLedger`, in the History Archive (from HAS url), will be synced with `core_latest_ledger` from live horizon.
 
-**!!!CAUTION!!!** If you want to expose your horizon server to public make sure you put it behind reverse proxy with proper SSL.
+**!!!CAUTION!!!** If you want to expose your horizon server to the public make sure you put it behind reverse proxy with proper SSL security.
 
 ## Health Probe
 
-For production, it is highly recommend that you detect your `horizon` server health. This guide doesn't do health probe because we start `stellar-core` and `horizon` in standby mode. However, probe script is provided [scripts/horizon-health-probe.sh](./scripts/horizon-health-probe.sh).
+For production, it is highly recommend that you detect your `horizon` server health. This guide doesn't do health probe because we start `stellar-core` and `horizon` in standby mode. However, the probe script is provided @ [scripts/horizon-health-probe.sh](./scripts/horizon-health-probe.sh).
 
 ## Connect to Horizon Server
 
-If you expose your horizon server through domain (`HTTPS`) then you can start connecting to your server simply replace the our official url with your own. However, if your server is deploy in private network and not serve behind `HTTPS` you'll need to adjust your client script like so:
+If you expose your horizon server through the (`HTTPS`) domain then you can start connecting to your server simply by replacing our official url with your own. However, if your server is deployed in a private network and not served behind `HTTPS` security then you'll need to adjust your client script like so:
 
 ```javascript
 // npm i --save @abxit/js-kinesis-sdk
@@ -225,12 +225,12 @@ If you want to stop the network use this script:
 
 ## Troubleshoot
 
-In case if the setting up a network gives error 
+In case if setting up the network gives you the following error: 
 ```bash
 could not find an available, non-overlapping IPv4 address pool among the defaults to assign to the network
 ```
 
-then uncomment the `networks` section of the `docker-compose.yaml` and provide unique subnet mask to each of the four networks by replacing `NNN` with number `2+`.
+then uncomment the `networks` section of the `docker-compose.yaml` and provide a unique subnet mask to each of the four networks by replacing `NNN` with number `2+`.
 
 ```bash
 networks:
