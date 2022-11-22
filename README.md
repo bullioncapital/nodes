@@ -63,11 +63,11 @@ For sysadmin, here are list of known ports used by each service:
 
 To start a network, the following steps are executed through bash scripts:-
 1. Starting the services 
-2. Initializing databases and migrating commands for each DB
+2. Initializing databases and migrating commands for each database
 3. Node catch-up to download the latest ledger
 4. Going live 
 
-`./exec.sh` is a common helper script which starts the container of teh given SERVICE_NAME for the given NETWORK_CODE passed as parameters.
+`./exec.sh` is a common helper script which starts the container of the given SERVICE_NAME for the given NETWORK_CODE passed as parameters.
 
 ```bash
 # NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
