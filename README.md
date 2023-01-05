@@ -54,7 +54,7 @@ For sysadmin, here are list of known ports used by each service:
 | Port  | Service      | Description                                                                  |
 | ----- | ------------ | ---------------------------------------------------------------------------- |
 | 5432  | postgresql   | database access port                                                         |
-| 8000  | horizon      | main http port                                                               |
+| 8000, 8001, 8002, 8003  | horizon      | main http port                                                               |
 | 6060  | horizon      | admin port **must be blocked from public access**                            |
 | 11625 | stellar-core | peer node port                                                               |
 | 11626 | stellar-core | main http port **block all public access and allow connection from Horizon** |
@@ -74,13 +74,13 @@ To start a network, the following steps are executed through bash scripts:-
 # SERVICE_NAME = core | horizon | db
 ./exec.sh <NETWORK_CODE> <SERVICE_NAME>
 ````
- following explains NETWORK_CODES 
-| Fiat Asset | Asset Code | Environment | NETWORK_CODE  | 
-| ---------- | ---------- | ----------- | --------------| 
-| GOLD       | KAU        | Mainnet     | kau-mainnet   | 
-| SILVER     | KAG        | Mainnet     | kag-mainnet   | 
-| GOLD       | TKAU       | Testnet     | kau-testnet   | 
-| SILVER     | TKAG       | Testnet     | kag-testnet   | 
+ following explains NETWORK_CODES and Horizon port details:
+| Fiat Asset | Asset Code | Environment | NETWORK_CODE  | HORIZON_HTTP_PORT |
+| ---------- | ---------- | ----------- | --------------| --------------| 
+| GOLD       | KAU        | Mainnet     | kau-mainnet   | 8000 |
+| SILVER     | KAG        | Mainnet     | kag-mainnet   |  8001 |
+| GOLD       | TKAU       | Testnet     | kau-testnet   |  8002 |
+| SILVER     | TKAG       | Testnet     | kag-testnet   |  8003 |
 
 
 
@@ -88,7 +88,7 @@ To start a network, the following steps are executed through bash scripts:-
 To bootstrap each of the four environments , simply type:
 
 ```bash
-# HORIZON_HTTP_PORT = unique horizon http port for the network
+# HORIZON_HTTP_PORT = <use recommended port listed in above>
 ./setup.sh <NETWORK_CODE> <HORIZON_HTTP_PORT>
 ```
 
@@ -123,6 +123,18 @@ Each network node needs to catchup to its respective LEDGER_MAX.
 
 First, use the following HAS, (Historical Archive State), urls to extract `currentLedger` for the network. This value will be used as `LEDGER_MAX` in catchup commands.
 
+In the following example the `currentLedger` number is `23818687`.
+
+```json
+{
+  "version": 1,
+  "server": "v17.4.0-kinesis.2",
+  "currentLedger": 23818687,
+  "networkPassphrase": "Kinesis Live",
+  "currentBuckets": []
+}
+```
+
 | Fiat Asset | Asset Code | Environment | History Archive State (HAS)                                                                                             |
 | ---------- | ---------- | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
 | GOLD       | KAU        | Mainnet     | [.well-known/stellar-history.json](https://kau-mainnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
@@ -130,7 +142,7 @@ First, use the following HAS, (Historical Archive State), urls to extract `curre
 | GOLD       | TKAU       | Testnet     | [.well-known/stellar-history.json](https://kau-testnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
 | SILVER     | TKAG       | Testnet     | [.well-known/stellar-history.json](https://kag-testnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
 
-Second, use `./exec.sh` script to drop into each service `bash` shell through $SERVICE_NAME
+Second, use `./exec.sh` script to drop into each service `bash` shell through SERVICE_NAME.
 
 ```bash
 # SERVICE_NAME = core | horizon | db
@@ -148,7 +160,7 @@ stellar-core catchup <LEDGER_MAX>/512
 ```
 
 
-- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS. ie: "currentLedger": 16514687
+- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS. ie: "currentLedger": 23818687
 - Once the catchup is successful on **core**, the status reported in json format in logs
 ```bash
     "state" : "Joining SCP",
@@ -161,15 +173,15 @@ stellar-core catchup <LEDGER_MAX>/512
 ```bash
 # NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
 ./exec.sh <NETWORK_CODE> horizon
-export LEDGER_MAX=10000
+export LEDGER_MAX=<LEDGER_MAX retrieved from HAS currentLedger>
 export LEDGER_MIN=$((LEDGER_MAX - 512))
 export ENABLE_CAPTIVE_CORE_INGESTION=true
 horizon db reingest range $LEDGER_MIN $LEDGER_MAX
 ```
 
-- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS. ie: "currentLedger": 16514687
+- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS. ie: "currentLedger": 23818687
 - `<LEDGER_MIN>` if you want to host full ledger use `2`, otherwise substract `LEDGER_MAX` by `512` should be sufficient to get your horizon up and running.
-- On a successful catchup on **horizon**, the generated log file `horizon-ingestion.log` will have log indicating `successfully reingested range`
+- On a successful catchup you will have see log indicating `successfully reingested range`
 
 For `Horizon`, if you've got a super machine you can cut down ingestion time by bump up `--parallel-workers <NUMBER_CORE>`. However, if the `Horizon` server crashes at this stage then use the command `horizon db detect-gaps`, this will detect any ingestion gaps. If gaps are detected it will print out commands that you can copy/paste in order to backfill any missing ledgers.
 
@@ -210,7 +222,16 @@ Your `core` will be ready between `3-5 minutes` and your `horizon` will follow s
 
 When the **core** is live, the live logs will contain closing ledger entries with `Closed ledger:` and `Got consensus:` every 3-5 seconds.
 
-The **horizon** is live at `http://localhost:<HORIZON_HTTP_PORT>` for the network.  Around every 64 ledgers, the `currentLedger`, in the History Archive (from HAS url), will be synced with `core_latest_ledger` from live horizon.
+**Verify**
+
+| Fiat Asset | Asset Code | Environment   | HORIZON |
+| ---------- | ---------- | ----------- | --------------| 
+| GOLD       | KAU        | Mainnet        | http://localhost:8000 |
+| SILVER     | KAG        | Mainnet        | http://localhost:8001 |
+| GOLD       | TKAU       | Testnet        | http://localhost:8002 |
+| SILVER     | TKAG       | Testnet        | http://localhost:8003 |
+
+Around every 64 ledgers, the `currentLedger`, in the History Archive (from HAS url), will be synced with `core_latest_ledger` from live horizon.
 
 **!!!CAUTION!!!** If you want to expose your horizon server to the public make sure you put it behind reverse proxy with proper SSL security.
 
