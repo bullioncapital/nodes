@@ -233,6 +233,8 @@ When the **core** is live, the live logs will contain closing ledger entries wit
 
 Around every 64 ledgers, the `currentLedger`, in the History Archive (from HAS url), will be synced with `core_latest_ledger` from live horizon.
 
+If you want to observe the network live you can grab [Stellar Expert](https://github.com/chatch/stellarexplorer) and point it to your local horizon.
+
 **!!!CAUTION!!!** If you want to expose your horizon server to the public make sure you put it behind reverse proxy with proper SSL security.
 
 ## Health Probe
