@@ -139,7 +139,7 @@ Second, use `./exec.sh` script to drop into each service `bash` shell through $S
 
 Run the following command to catchup/ingest Kinesis Blockchain ledgers inside the Core and Horizon services. 
 
-*Core Catchup*
+**Core Catchup**
 
 ```bash
 # NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
@@ -147,13 +147,13 @@ Run the following command to catchup/ingest Kinesis Blockchain ledgers inside th
 stellar-core catchup <LEDGER_MAX>/512
 ```
 
-**Note:**
+
 - `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS. ie: "currentLedger": 16514687
 - Once the catchup is successful on **core**, the status reported in json format in logs
-````bash
+```bash
     "state" : "Joining SCP",
     "status" : [ "Catching up to ledger 512: Succeeded: catchup-seq" ]
-  ````
+```
 
 
 **Horizon Catchup**
@@ -166,8 +166,6 @@ export LEDGER_MIN=$((LEDGER_MAX - 512))
 export ENABLE_CAPTIVE_CORE_INGESTION=true
 horizon db reingest range $LEDGER_MIN $LEDGER_MAX
 ```
-
-**Note:**
 
 - `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS. ie: "currentLedger": 16514687
 - `<LEDGER_MIN>` if you want to host full ledger use `2`, otherwise substract `LEDGER_MAX` by `512` should be sufficient to get your horizon up and running.
@@ -207,7 +205,7 @@ export ENABLE_CAPTIVE_CORE_INGESTION=false
 horizon db reingest range $LEDGER_MIN $LEDGER_MAX
 ```
 
-**Note:** On first run, both the components will enter pending state because they wait for the known peers to publish its' state to history archive (HAS), which occurs every 5 minutes (or 64 ledgers).
+On first run, both the components will enter pending state because they wait for the known peers to publish its' state to history archive (HAS), which occurs every 5 minutes (or 64 ledgers).
 Your `core` will be ready between `3-5 minutes` and your `horizon` will follow suite.
 
 When the **core** is live, the live logs will contain closing ledger entries with `Closed ledger:` and `Got consensus:` every 3-5 seconds.
