@@ -139,32 +139,43 @@ Second, use `./exec.sh` script to drop into each service `bash` shell through $S
 
 Run the following command to catchup/ingest Kinesis Blockchain ledgers inside the Core and Horizon services. 
 
-| Service | Command                                             | 
-| --------| --------------------------------------------------| 
-| Core      | `stellar-core catchup <LEDGER_MAX>/512` ||                                          |
-| Horizon   | `horizon db reingest range <LEDGER_MIN> <LEDGER_MAX> --parallel-workers 4 --log-file horizon-ingestion.log` |           
-
-
-Usage:
-
-- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS. ie: "currentLedger": 16514687
-- `<LEDGER_MIN>` if you want to host full ledger use `2`, otherwise substract `LEDGER_MAX` by `512` should be sufficient to get your horizon up and running.
+*Core Catchup*
 
 ```bash
-# horizon data ingestion
-LEDGER_MAX=10000
-LEDGER_MIN=$$(LEDGER_MAX - 512))
-horizon db reingest range $LEDGER_MIN $LEDGER_MAX ...
+# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
+./exec.sh <NETWORK_CODE> core
+stellar-core catchup <LEDGER_MAX>/512
 ```
 
-For `Horizon`, if you've got a super machine you can cut down ingestion time by bump up `--parallel-workers <NUMBER_CORE>`. However, if the `Horizon` server crashes at this stage then use the command `horizon db detect-gaps`, this will detect any ingestion gaps. If gaps are detected it will print out commands that you can copy/paste in order to backfill any missing ledgers.
-
-Once the catchup is successful on **core**, the status reported in json format in logs
+**Note:**
+- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS. ie: "currentLedger": 16514687
+- Once the catchup is successful on **core**, the status reported in json format in logs
 ````bash
     "state" : "Joining SCP",
     "status" : [ "Catching up to ledger 512: Succeeded: catchup-seq" ]
   ````
-On a successful catchup on **horizon**, the generated log file `horizon-ingestion.log` will have log indicating `successfully reingested range`
+
+
+**Horizon Catchup**
+
+```bash
+# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
+./exec.sh <NETWORK_CODE> horizon
+export LEDGER_MAX=10000
+export LEDGER_MIN=$((LEDGER_MAX - 512))
+export ENABLE_CAPTIVE_CORE_INGESTION=true
+horizon db reingest range $LEDGER_MIN $LEDGER_MAX
+```
+
+**Note:**
+
+- `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS. ie: "currentLedger": 16514687
+- `<LEDGER_MIN>` if you want to host full ledger use `2`, otherwise substract `LEDGER_MAX` by `512` should be sufficient to get your horizon up and running.
+- On a successful catchup on **horizon**, the generated log file `horizon-ingestion.log` will have log indicating `successfully reingested range`
+
+For `Horizon`, if you've got a super machine you can cut down ingestion time by bump up `--parallel-workers <NUMBER_CORE>`. However, if the `Horizon` server crashes at this stage then use the command `horizon db detect-gaps`, this will detect any ingestion gaps. If gaps are detected it will print out commands that you can copy/paste in order to backfill any missing ledgers.
+
+**VERIFY CATCHUP**
 
 You can also check through db container by executing the below script:
 ````bash
@@ -180,10 +191,21 @@ psql -h localhost -U postgres -d <NETWORK_CODE>-core -c "select max(ledgerseq), 
 
 Use the following command to start each component in live mode in the `./exec.sh` script.
 
-| Service | Command                                 | Description                          |
-| --------- | --------------------------------------- | ------------------------------------ |
-| Core      | `stellar-core run --wait-for-consensus` |                                      |
-| Horizon   | `horizon serve`                         | http://localhost:<HORIZON_HTTP_PORT> |
+**Core Live**
+```bash
+# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
+./exec.sh <NETWORK_CODE> core
+stellar-core run --wait-for-consensus
+```
+
+**Horizon Live**
+
+```bash
+# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
+./exec.sh <NETWORK_CODE> horizon
+export ENABLE_CAPTIVE_CORE_INGESTION=false
+horizon db reingest range $LEDGER_MIN $LEDGER_MAX
+```
 
 **Note:** On first run, both the components will enter pending state because they wait for the known peers to publish its' state to history archive (HAS), which occurs every 5 minutes (or 64 ledgers).
 Your `core` will be ready between `3-5 minutes` and your `horizon` will follow suite.

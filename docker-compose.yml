@@ -51,7 +51,7 @@ services:
       - INGEST=true
       - ENABLE_CAPTIVE_CORE_INGESTION=false
       - INGEST_FAILED_TRANSACTIONS=true
-      - HISTORY_ARCHIVE_URLS=https://${NETWORK_CODE}-arch-syd-node2.kinesisgroup.io/
+      - HISTORY_ARCHIVE_URLS=https://${NETWORK_CODE}-arch-syd-node2.kinesisgroup.io
       - PER_HOUR_RATE_LIMIT=200000
     entrypoint:
     - bash
