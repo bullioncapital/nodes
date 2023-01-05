@@ -202,7 +202,7 @@ stellar-core run --wait-for-consensus
 # NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
 ./exec.sh <NETWORK_CODE> horizon
 export ENABLE_CAPTIVE_CORE_INGESTION=false
-horizon db reingest range $LEDGER_MIN $LEDGER_MAX
+horizon serve
 ```
 
 On first run, both the components will enter pending state because they wait for the known peers to publish its' state to history archive (HAS), which occurs every 5 minutes (or 64 ledgers).
