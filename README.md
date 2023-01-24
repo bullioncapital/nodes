@@ -17,7 +17,7 @@ Kinesis Blockchain Networks:
 | GOLD       | TKAU       | Testnet     | Kinesis UAT        | https://kau-testnet.kinesisgroup.io |
 | SILVER     | TKAG       | Testnet     | Kinesis KAG UAT    | https://kag-testnet.kinesisgroup.io |
 
-If you're reading this we assume you want to setup your own node. Let's go through the code structure 
+If you're reading this we assume you want to setup your own node. Let's go through the code structure
 
 ```bash
 .
@@ -33,7 +33,7 @@ If you're reading this we assume you want to setup your own node. Let's go throu
 ├── scripts             # containers init/ helper scripts
 │   ├── core-init.sh
 │   └── horizon-health-probe.sh
-├── setup.sh            
+├── setup.sh
 ├── stop.sh
 └── teardown.sh
 ```
@@ -42,49 +42,49 @@ If you're reading this we assume you want to setup your own node. Let's go throu
 
 Each network has three services running **db, core and horizon** in `docker-compose`. Following are the images of these services:
 
-1. db      : `postgres:13` is used for storing both stellar-core and horizon data
-2. core    : `abxit/kinesis-core:v17.4.0-kinesis.2` Stellar-core forked
+1. db : `postgres:13` is used for storing both stellar-core and horizon data
+2. core : `abxit/kinesis-core:v17.4.0-kinesis.2` Stellar-core forked
 3. horizon :`abxit/kinesis-horizon:v2.8.3-kinesis.2` Horizon forked
-
 
 ### Ports
 
 For sysadmin, here are list of known ports used by each service:
 
-| Port  | Service      | Description                                                                  |
-| ----- | ------------ | ---------------------------------------------------------------------------- |
-| 5432  | postgresql   | database access port                                                         |
-| 8000, 8001, 8002, 8003  | horizon      | main http port                                                               |
-| 6060  | horizon      | admin port **must be blocked from public access**                            |
-| 11625 | stellar-core | peer node port                                                               |
-| 11626 | stellar-core | main http port **block all public access and allow connection from Horizon** |
+| Port                   | Service      | Description                                                                  |
+| ---------------------- | ------------ | ---------------------------------------------------------------------------- |
+| 5432                   | postgresql   | database access port                                                         |
+| 8000, 8001, 8002, 8003 | horizon      | main http port                                                               |
+| 6060                   | horizon      | admin port **must be blocked from public access**                            |
+| 11625                  | stellar-core | peer node port                                                               |
+| 11626                  | stellar-core | main http port **block all public access and allow connection from Horizon** |
 
 ## Bootstrap a Network
 
 To start a network, the following steps are executed through bash scripts:-
-1. Starting the services 
+
+1. Starting the services
 2. Initializing databases and migrating commands for each database
 3. Node catch-up to download the latest ledger
-4. Going live 
+4. Going live
 
 `./exec.sh` is a common helper script which starts the container of the given SERVICE_NAME for the given NETWORK_CODE passed as parameters.
 
 ```bash
-# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
+# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet
 # SERVICE_NAME = core | horizon | db
 ./exec.sh <NETWORK_CODE> <SERVICE_NAME>
-````
- following explains NETWORK_CODES and Horizon port details:
-| Fiat Asset | Asset Code | Environment | NETWORK_CODE  | HORIZON_HTTP_PORT |
-| ---------- | ---------- | ----------- | --------------| --------------| 
-| GOLD       | KAU        | Mainnet     | kau-mainnet   | 8000 |
-| SILVER     | KAG        | Mainnet     | kag-mainnet   |  8001 |
-| GOLD       | TKAU       | Testnet     | kau-testnet   |  8002 |
-| SILVER     | TKAG       | Testnet     | kag-testnet   |  8003 |
+```
 
-
+following explains NETWORK_CODES and Horizon port details:
+| Fiat Asset | Asset Code | Environment | NETWORK_CODE | HORIZON_HTTP_PORT |
+| ---------- | ---------- | ----------- | --------------| --------------|
+| GOLD | KAU | Mainnet | kau-mainnet | 8000 |
+| SILVER | KAG | Mainnet | kag-mainnet | 8001 |
+| GOLD | TKAU | Testnet | kau-testnet | 8002 |
+| SILVER | TKAG | Testnet | kag-testnet | 8003 |
 
 ### 1. Starting the services
+
 To bootstrap each of the four environments , simply type:
 
 ```bash
@@ -93,29 +93,33 @@ To bootstrap each of the four environments , simply type:
 ```
 
 This script will setup postgres, stellar-core & horizon service. However, both stellar-core and horizon service are started in standby mode.
-This is intentional because you will need to perform ONE TIME catchup before both services are ready to serve. 
+This is intentional because you will need to perform ONE TIME catchup before both services are ready to serve.
 
 ### 2. Database Initialization
+
 After setting up the network, run following:
 
 ```bash
-# This script 
+# This script
 # 1. creates stellar-core and horizon database
-# 2. run migration commands against each database 
+# 2. run migration commands against each database
 # !!IMPORTANT!! this script will wipe out stellar-core db each time it runs.
 ./db-init.sh <NETWORK_CODE>
 ```
 
 To verify if database is correctly initialised, run
-````bash
-./exec.sh <NETWORK_CODE> db
-````
-Inside the container run
-````bash
-psql -h localhost --username=postgres --command="\l" | grep <NETWORK_CODE>
-````
-This will give you the db of core and horizon for NETWORK_CODE if db has been created.
 
+```bash
+./exec.sh <NETWORK_CODE> db
+```
+
+Inside the container run
+
+```bash
+psql -h localhost --username=postgres --command="\l" | grep <NETWORK_CODE>
+```
+
+This will give you the db of core and horizon for NETWORK_CODE if db has been created.
 
 ### 3. Catching up
 
@@ -149,29 +153,28 @@ Second, use `./exec.sh` script to drop into each service `bash` shell through SE
 ./exec.sh <NETWORK_CODE> <SERVICE_NAME>
 ```
 
-Run the following command to catchup/ingest Kinesis Blockchain ledgers inside the Core and Horizon services. 
+Run the following command to catchup/ingest Kinesis Blockchain ledgers inside the Core and Horizon services.
 
 **Core Catchup**
 
 ```bash
-# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
+# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet
 ./exec.sh <NETWORK_CODE> core
 stellar-core catchup <LEDGER_MAX>/512
 ```
 
-
 - `<LEDGER_MAX>` should be the value of `currentLedger` extracted from the HAS. ie: "currentLedger": 23818687
 - Once the catchup is successful on **core**, the status reported in json format in logs
+
 ```bash
     "state" : "Joining SCP",
     "status" : [ "Catching up to ledger 512: Succeeded: catchup-seq" ]
 ```
 
-
 **Horizon Catchup**
 
 ```bash
-# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
+# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet
 ./exec.sh <NETWORK_CODE> horizon
 export LEDGER_MAX=<LEDGER_MAX retrieved from HAS currentLedger>
 export LEDGER_MIN=$((LEDGER_MAX - 512))
@@ -188,22 +191,26 @@ For `Horizon`, if you've got a super machine you can cut down ingestion time by 
 **VERIFY CATCHUP**
 
 You can also check through db container by executing the below script:
-````bash
+
+```bash
 ./exec.sh <NETWORK_CODE> db
-````
+```
+
 Once inside the db container, verify the kinesis-core ingested the ledgers with the below script:
-````bash
-# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
+
+```bash
+# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet
 psql -h localhost -U postgres -d <NETWORK_CODE>-core -c "select max(ledgerseq), count(ledgerseq) from ledgerheaders"
-````
+```
 
 ### 4. Live
 
 Use the following command to start each component in live mode in the `./exec.sh` script.
 
 **Core Live**
+
 ```bash
-# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
+# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet
 ./exec.sh <NETWORK_CODE> core
 stellar-core run --wait-for-consensus
 ```
@@ -211,7 +218,7 @@ stellar-core run --wait-for-consensus
 **Horizon Live**
 
 ```bash
-# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet 
+# NETWORK_CODE = kau-mainnet | kag-mainnet | kau-testnet | kag-testnet
 ./exec.sh <NETWORK_CODE> horizon
 export ENABLE_CAPTIVE_CORE_INGESTION=false
 horizon serve
@@ -224,12 +231,12 @@ When the **core** is live, the live logs will contain closing ledger entries wit
 
 **Verify**
 
-| Fiat Asset | Asset Code | Environment   | HORIZON |
-| ---------- | ---------- | ----------- | --------------| 
-| GOLD       | KAU        | Mainnet        | http://localhost:8000 |
-| SILVER     | KAG        | Mainnet        | http://localhost:8001 |
-| GOLD       | TKAU       | Testnet        | http://localhost:8002 |
-| SILVER     | TKAG       | Testnet        | http://localhost:8003 |
+| Fiat Asset | Asset Code | Environment | HORIZON               |
+| ---------- | ---------- | ----------- | --------------------- |
+| GOLD       | KAU        | Mainnet     | http://localhost:8000 |
+| SILVER     | KAG        | Mainnet     | http://localhost:8001 |
+| GOLD       | TKAU       | Testnet     | http://localhost:8002 |
+| SILVER     | TKAG       | Testnet     | http://localhost:8003 |
 
 Around every 64 ledgers, the `currentLedger`, in the History Archive (from HAS url), will be synced with `core_latest_ledger` from live horizon.
 
@@ -258,8 +265,8 @@ const server = new Server("http://localhost:<HORIZON_HTTP_PORT>", {
 
 ref. https://github.com/bullioncapital/js-kinesis-sdk/blob/main/docs/reference/Kinesis.md
 
-
 ## Additional Info
+
 If you want to stop the network use this script:
 
 ```bash
@@ -268,7 +275,8 @@ If you want to stop the network use this script:
 
 ## Troubleshoot
 
-In case if setting up the network gives you the following error: 
+In case if setting up the network gives you the following error:
+
 ```bash
 could not find an available, non-overlapping IPv4 address pool among the defaults to assign to the network
 ```
@@ -282,4 +290,28 @@ networks:
     ipam:
       config:
         - subnet: 172.16.NNN.0/24
-````
+```
+
+## Upgrade
+
+To update new version you simply re-run the `./setup.sh <NETWORK_CODE> <HORIZON_HTTP_PORT>` script.
+
+It depends on the change you might need to run database maintenance commands. So pay attention to the command outputs. If `<NETWORK_CODE>_core` or `<NETWORK_CODE>_horizon` container get **ReCreated** you might want to run database maintenance commands:
+
+**Core Database Migration**
+
+```bash
+./exec.sh <NETWORK_CODE> core
+stellar-core upgrade-db
+# followed by
+stellar-core run --wait-for-consensus
+```
+
+**Horizon Database Migration**
+
+```bash
+./exec.sh <NETWORK_CODE> horizon
+horizon db migrate
+# followed by
+horizon serve
+```
