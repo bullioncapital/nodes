@@ -12,7 +12,7 @@ services:
 
   core:
     container_name: "${NETWORK_CODE}_core"
-    image: abxit/kinesis-core:v17.4.0-kinesis.2
+    image: abxit/kinesis-core:v18.5.0-kinesis.1
     restart: on-failure
     depends_on:
       - db
@@ -35,7 +35,7 @@ services:
 
   horizon:
     container_name: "${NETWORK_CODE}_horizon"
-    image: abxit/kinesis-horizon:v2.8.3-kinesis.3
+    image: abxit/kinesis-horizon:v2.16.1-kinesis.2
     restart: on-failure
     depends_on:
       - db
