@@ -43,8 +43,8 @@ If you're reading this we assume you want to setup your own node. Let's go throu
 Each network has three services running **db, core and horizon** in `docker-compose`. Following are the images of these services:
 
 1. db : `postgres:13` is used for storing both stellar-core and horizon data
-2. core : `abxit/kinesis-core:v17.4.0-kinesis.2` Stellar-core forked
-3. horizon :`abxit/kinesis-horizon:v2.8.3-kinesis.2` Horizon forked
+2. core : `abxit/kinesis-core:v18.5.0-kinesis.1` Stellar-core forked
+3. horizon :`abxit/kinesis-horizon:v2.16.1-kinesis.3` Horizon forked
 
 ### Ports
 
@@ -132,7 +132,7 @@ In the following example the `currentLedger` number is `23818687`.
 ```json
 {
   "version": 1,
-  "server": "v17.4.0-kinesis.2",
+  "server": "v18.5.0-kinesis.1",
   "currentLedger": 23818687,
   "networkPassphrase": "Kinesis Live",
   "currentBuckets": []
