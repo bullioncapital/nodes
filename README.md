@@ -141,10 +141,10 @@ In the following example the `currentLedger` number is `23818687`.
 
 | Fiat Asset | Asset Code | Environment | History Archive State (HAS)                                                                                             |
 | ---------- | ---------- | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
-| GOLD       | KAU        | Mainnet     | [.well-known/stellar-history.json](https://kau-mainnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
-| SILVER     | KAG        | Mainnet     | [.well-known/stellar-history.json](https://kag-mainnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
-| GOLD       | TKAU       | Testnet     | [.well-known/stellar-history.json](https://kau-testnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
-| SILVER     | TKAG       | Testnet     | [.well-known/stellar-history.json](https://kag-testnet-arch-syd-node1.kinesisgroup.io/.well-known/stellar-history.json) |
+| GOLD       | KAU        | Mainnet     | [.well-known/stellar-history.json](https://kau-mainnet-arch-syd-node2.kinesisgroup.io/.well-known/stellar-history.json) |
+| SILVER     | KAG        | Mainnet     | [.well-known/stellar-history.json](https://kag-mainnet-arch-syd-node2.kinesisgroup.io/.well-known/stellar-history.json) |
+| GOLD       | TKAU       | Testnet     | [.well-known/stellar-history.json](https://kau-testnet-arch-syd-node2.kinesisgroup.io/.well-known/stellar-history.json) |
+| SILVER     | TKAG       | Testnet     | [.well-known/stellar-history.json](https://kag-testnet-arch-syd-node2.kinesisgroup.io/.well-known/stellar-history.json) |
 
 Second, use `./exec.sh` script to drop into each service `bash` shell through SERVICE_NAME.
 
