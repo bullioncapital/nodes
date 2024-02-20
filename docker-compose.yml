@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   db:
@@ -19,12 +19,12 @@ services:
     ports:
       - 11625
       - 11626
-    entrypoint: 
-    - bash
-    - -c
-    - |-
-      /scripts/core-init.sh
-      sleep infinity
+    entrypoint:
+      - bash
+      - -c
+      - |-
+        /scripts/core-init.sh
+        sleep infinity
     volumes:
       - $PWD/config:/config
       - $PWD/scripts:/scripts
@@ -35,7 +35,7 @@ services:
 
   horizon:
     container_name: "${NETWORK_CODE}_horizon"
-    image: abxit/kinesis-horizon:v2.16.1-kinesis.4
+    image: abxit/kinesis-horizon:v2.16.1-kinesis.5
     restart: on-failure
     depends_on:
       - db
@@ -47,20 +47,19 @@ services:
         DATABASE_URL=postgresql://postgres:postgres@${NETWORK_CODE}_db:5432/${NETWORK_CODE}-horizon?sslmode=disable
       - >-
         STELLAR_CORE_DATABASE_URL=postgresql://postgres:postgres@${NETWORK_CODE}_db/${NETWORK_CODE}-core?sslmode=disable
-      - STELLAR_CORE_URL=http://${NETWORK_CODE}_core:11626  # pointing to your local stellar-core service above
+      - STELLAR_CORE_URL=http://${NETWORK_CODE}_core:11626 # pointing to your local stellar-core service above
       - INGEST=true
       - ENABLE_CAPTIVE_CORE_INGESTION=false
       - INGEST_FAILED_TRANSACTIONS=true
       - HISTORY_ARCHIVE_URLS=https://${NETWORK_CODE}-arch-syd-node2.kinesisgroup.io
       - PER_HOUR_RATE_LIMIT=200000
     entrypoint:
-    - bash
-    - -c
-    - |-
-      sleep infinity
+      - bash
+      - -c
+      - |-
+        sleep infinity
     volumes:
       - $PWD/scripts:/scripts
-
 # networks:
 #   default:
 #     driver: bridge

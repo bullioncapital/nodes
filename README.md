@@ -44,7 +44,7 @@ Each network has three services running **db, core and horizon** in `docker-comp
 
 1. db : `postgres:13` is used for storing both stellar-core and horizon data
 2. core : `abxit/kinesis-core:v18.5.0-kinesis.1` Stellar-core forked
-3. horizon :`abxit/kinesis-horizon:v2.16.1-kinesis.4` Horizon forked
+3. horizon :`abxit/kinesis-horizon:v2.16.1-kinesis.5` Horizon forked
 
 ### Ports
 
