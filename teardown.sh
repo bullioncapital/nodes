@@ -6,4 +6,4 @@ if [ -z "$1" ]; then
 fi
 
 export NETWORK_CODE=${1,,} # kag-testnet, kag-mainnet, etc
-docker-compose -f docker-compose.yml --project-name $NETWORK_CODE down -v
+docker compose -f docker-compose.yml --project-name $NETWORK_CODE down -v

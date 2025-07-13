@@ -22,4 +22,4 @@ echo "NETWORK_PASSPHRASE: ${NETWORK_PASSPHRASE}"
 echo "HORIZON_HTTP_PORT: ${HORIZON_HTTP_PORT}"
 echo "============================================="
 
-docker-compose -f docker-compose.yml --project-name $NETWORK_CODE up -d
+docker compose -f docker-compose.yml --project-name $NETWORK_CODE up -d
